@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления визиткой</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #F8FAFC; margin: 0; padding: 20px; color: #0F172A; }
+        .admin-card { max-width: 600px; margin: 0 auto; background: #FFF; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: #0F766E; }
+        .field { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 5px; color: #475569; }
+        input[type="text"], input[type="url"], input[type="tel"], input[type="email"] { width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; box-sizing: border-box; font-size: 0.95rem; }
+        .btn-row { background: #F1F5F9; padding: 12px; border-radius: 8px; margin-bottom: 10px; position: relative; }
+        .btn-row-header { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+        .color-picker { width: 40px; height: 38px; border: none; cursor: pointer; border-radius: 6px; }
+        .btn-save { background: #0F766E; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; margin-top: 15px; }
+        .btn-add { background: #0284C7; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-bottom: 15px; font-weight: 600; }
+        .btn-del { background: #EF4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="admin-card">
+    <h2>Редактирование визитки</h2>
+    
+    <div class="field">
+        <label>ФИО Врача</label>
+        <input type="text" id="adm-name">
+    </div>
+    
+    <div class="field">
+        <label>Специальность / Должность</label>
+        <input type="text" id="adm-role">
+    </div>
+
+    <div class="field">
+        <label>Клиника / Адрес</label>
+        <input type="text" id="adm-clinic">
+    </div>
+
+    <div class="field">
+        <label>Телефон (для сохранения в VCF)</label>
+        <input type="tel" id="adm-phone" placeholder="+7 700 000 00 00">
+    </div>
+
+    <div class="field">
+        <label>Email (для сохранения в VCF)</label>
+        <input type="email" id="adm-email" placeholder="doctor@clinic.kz">
+    </div>
+
+    <div class="field">
+        <label>Ссылка на Фото</label>
+        <input type="text" id="adm-photo">
+    </div>
+
+    <h3>Кнопки и Ссылки</h3>
+    <div id="btn-list-admin"></div>
+    <button class="btn-add" onclick="addButtonRow()">+ Добавить кнопку</button>
+
+    <button class="btn-save" onclick="saveData()">Сохранить изменения</button>
+</div>
+
+<script>
+    let currentData = {};
+
+    async function loadAdmin() {
+        const local = localStorage.getItem('dentalCardData');
+        if (local) {
+            currentData = JSON.parse(local);
+            fillForm();
+        } else {
+            try {
+                const res = await fetch('data.json');
+                currentData = await res.json();
+                fillForm();
+            } catch (e) {
+                console.error("Ошибка чтения JSON", e);
+            }
+        }
+    }
+
+    function fillForm() {
+        document.getElementById('adm-name').value = currentData.name || '';
+        document.getElementById('adm-role').value = currentData.role || '';
+        document.getElementById('adm-clinic').value = currentData.clinic || '';
+        document.getElementById('adm-phone').value = currentData.phone || '';
+        document.getElementById('adm-email').value = currentData.email || '';
+        document.getElementById('adm-photo').value = currentData.photo || '';
+
+        const list = document.getElementById('btn-list-admin');
+        list.innerHTML = '';
+        if (currentData.buttons) {
+            currentData.buttons.forEach((btn, index) => addButtonRow(btn, index));
+        }
+    }
+
+    function addButtonRow(btn = {}, index = null) {
+        const list = document.getElementById('btn-list-admin');
+        const div = document.createElement('div');
+        div.className = 'btn-row';
+        div.innerHTML = `
+            <div class="btn-row-header">
+                <input type="color" class="color-picker adm-btn-color" value="${btn.color || '#0F766E'}">
+                <input type="text" class="adm-btn-label" placeholder="Название кнопки" value="${btn.label || ''}">
+                <button class="btn-del" onclick="this.parentElement.parentElement.remove()">X</button>
+            </div>
+            <input type="url" class="adm-btn-url" placeholder="Ссылка (https://...)" value="${btn.url || ''}" style="margin-bottom: 5px;">
+            <input type="text" class="adm-btn-svg" placeholder="SVG иконка (необязательно)" value="${(btn.svgIcon || '').replace(/"/g, '&quot;')}">
+        `;
+        list.appendChild(div);
+    }
+
+    function saveData() {
+        currentData.name = document.getElementById('adm-name').value;
+        currentData.role = document.getElementById('adm-role').value;
+        currentData.clinic = document.getElementById('adm-clinic').value;
+        currentData.phone = document.getElementById('adm-phone').value;
+        currentData.email = document.getElementById('adm-email').value;
+        currentData.photo = document.getElementById('adm-photo').value;
+
+        const rows = document.querySelectorAll('.btn-row');
+        currentData.buttons = [];
+        rows.forEach(row => {
+            currentData.buttons.push({
+                label: row.querySelector('.adm-btn-label').value,
+                url: row.querySelector('.adm-btn-url').value,
+                color: row.querySelector('.adm-btn-color').value,
+                svgIcon: row.querySelector('.adm-btn-svg').value
+            });
+        });
+
+        localStorage.setItem('dentalCardData', JSON.stringify(currentData));
+        alert('Настройки успешно сохранены! Обновите визитку.');
+    }
+
+    loadAdmin();
+</script>
+
+</body>
+</html>
