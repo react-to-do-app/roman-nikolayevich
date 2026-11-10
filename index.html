@@ -211,8 +211,7 @@
 
         <div class="footer-info">
             <div class="clinic-name" id="doc-clinic">...</div>
-            <!-- Сделали адрес ссылкой, которая ведет на карты -->
-            <a href="#" target="_blank" class="clinic-address" id="doc-address">...</a>
+            <a href="#" class="clinic-address" id="doc-address">...</a>
         </div>
     </div>
 
@@ -285,9 +284,10 @@
             
             const addressEl = document.getElementById('doc-address');
             addressEl.textContent = data.address || '';
-            // Формируем ссылку на карты (Yandex/Google поиск по адресу клиники)
+            
+            // Прямая ссылка на приложение 2ГИС для Астаны
             const mapQuery = encodeURIComponent((data.clinic || "ORAL DESIGN CLINIC") + " " + (data.address || "Астана Тұран даңғылы 55/13"));
-            addressEl.href = `https://yandex.kz/maps/?text=${mapQuery}`;
+            addressEl.href = `dgis://2gis.ru/astana/search/${mapQuery}`;
 
             if (data.whatsapp) {
                 document.getElementById('btn-phone').href = `tel:+${data.whatsapp}`;
